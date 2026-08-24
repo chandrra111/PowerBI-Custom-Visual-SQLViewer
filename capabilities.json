@@ -1,0 +1,29 @@
+{
+  "privileges": [],
+  "dataRoles": [
+    {
+      "displayName": "SQL Definition",
+      "name": "sqlText",
+      "kind": "Grouping"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "sqlText": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "sqlText"
+          }
+        }
+      }
+    }
+  ],
+  "objects": {}
+}
