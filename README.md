@@ -1,0 +1,94 @@
+# SQL Viewer — Power BI Custom Visual
+
+A Power BI custom visual that renders SQL text (stored procedure bodies, view
+definitions, ad-hoc queries) as **syntax-highlighted, line-numbered code**
+directly inside a report page — instead of the unreadable single-line blob you
+get from a Card or Table visual.
+
+Built with the Power BI Visuals API 5.3 and [Prism.js](https://prismjs.com/).
+
+## Why
+
+Data dictionaries and lineage reports often store SQL definitions in a column
+(e.g. from `sys.sql_modules.definition` or `INFORMATION_SCHEMA.VIEWS`). Native
+Power BI visuals collapse whitespace and wrap the text, so a 200-line procedure
+becomes an unreadable wall. This visual preserves formatting, colours the
+tokens, numbers the lines, and adds a one-click copy button.
+
+## Features
+
+- SQL syntax highlighting (keywords, strings, comments, numbers, functions)
+- Line numbers in a fixed gutter
+- Preserved indentation and line breaks
+- One-click **Copy SQL** to clipboard
+- No external service calls — everything runs client-side in the visual sandbox
+
+## Screenshot
+
+<!-- TODO: add assets/screenshot.png -->
+
+## Install
+
+1. Download the latest `.pbiviz` from the [Releases](../../releases) page.
+2. In Power BI Desktop: **Insert → More visuals → Import a visual from a file**.
+3. Select the downloaded `.pbiviz`.
+
+## Usage
+
+1. Add the **SQL Viewer** visual to your report page.
+2. Drag a column containing SQL text into the **SQL Definition** field well.
+3. Filter or slice down to a single row (the visual renders the first value).
+
+Example source query (SQL Server):
+
+```sql
+SELECT
+    o.name        AS object_name,
+    o.type_desc   AS object_type,
+    m.definition  AS sql_definition
+FROM sys.sql_modules AS m
+JOIN sys.objects     AS o ON o.object_id = m.object_id;
+```
+
+## Build from source
+
+Requires Node.js 18+ and the Power BI Visuals Tools.
+
+```bash
+npm install
+npm install -g powerbi-visuals-tools
+pbiviz --create-cert     # first time only
+npm start                # dev server for Power BI Service developer visual
+npm run package          # produces dist/*.pbiviz
+```
+
+## Project structure
+
+| Path                 | Purpose                                          |
+| -------------------- | ------------------------------------------------ |
+| `src/visual.ts`      | Visual implementation (render + copy button)     |
+| `src/settings.ts`    | Formatting-pane model (currently unused scaffold) |
+| `capabilities.json`  | Data roles and data-view mapping                 |
+| `pbiviz.json`        | Visual metadata (name, GUID, author, version)    |
+| `style/visual.less`  | Compiled stylesheet                              |
+
+## Known limitations
+
+- Renders only the **first row** of the bound column; filter to one object.
+- Power BI truncates very long string values in the data view, so extremely
+  large procedure bodies may be cut off.
+- No formatting-pane options yet (font size, theme, word wrap are hard-coded).
+- Syntax highlighting only — the visual does **not** re-indent or beautify the
+  SQL it receives.
+
+## Roadmap
+
+- [ ] Formatting pane: font size, font family, light/dark theme, word wrap
+- [ ] Optional SQL beautifier (re-indent / keyword casing)
+- [ ] Search-within-code box
+- [ ] Power BI theme + high-contrast mode support
+- [ ] Render all bound rows with an object selector
+
+## License
+
+MIT — see [LICENSE](LICENSE).

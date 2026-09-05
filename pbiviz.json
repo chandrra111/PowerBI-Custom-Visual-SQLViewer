@@ -6,13 +6,13 @@
     "visualClassName": "Visual",
     "version": "1.0.0.0",
     "description": "SQL Stored Procedure Viewer for Power BI",
-    "supportUrl": "https://www.microsoft.com",
-    "gitHubUrl": ""
+    "supportUrl": "https://github.com/chandrra111/PowerBI-Custom-Visual-SQLViewer/issues",
+    "gitHubUrl": "https://github.com/chandrra111/PowerBI-Custom-Visual-SQLViewer"
   },
   "apiVersion": "5.3.0",
   "author": {
-    "name": "Muhammed Fawaz",
-    "email": "muhammed.fawaz@pidilite.com"
+    "name": "Balachandra Srinevasalu",
+    "email": "balachandra.srinevasalu@gmail.com"
   },
   "assets": {
     "icon": "assets/icon.png"

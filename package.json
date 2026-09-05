@@ -1,10 +1,10 @@
 {
   "name": "visual",
-  "description": "default_template_value",
+  "description": "Power BI custom visual that renders SQL text as syntax-highlighted, line-numbered code",
   "version": "1.0.0.0",
   "repository": {
-    "type": "default_template_value",
-    "url": "default_template_value"
+    "type": "git",
+    "url": "https://github.com/chandrra111/PowerBI-Custom-Visual-SQLViewer.git"
   },
   "license": "MIT",
   "scripts": {
