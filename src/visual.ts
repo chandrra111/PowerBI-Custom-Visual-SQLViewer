@@ -20,6 +20,9 @@ import IVisual =
 const COPY_LABEL = "📋 Copy SQL";
 const COPY_RESET_MS = 2000;
 
+/** Above this average line length, the text has lost its line structure. */
+const MAX_COMFORTABLE_LINE_LENGTH = 120;
+
 /**
  * Injected once in the constructor rather than on every update(), which fires
  * on each resize as well as on each data change.
@@ -173,13 +176,36 @@ export class Visual implements IVisual {
     }
 
     /**
-     * Re-indents the SQL. Definitions pulled from sys.sql_modules are often a
-     * single line, or indented for a console rather than a report. Anything
-     * sql-formatter cannot parse is passed through untouched.
+     * sql-formatter is a query formatter, not a procedural one: it lays out a
+     * SELECT well but breaks a CREATE PROCEDURE header across odd lines. So it
+     * is applied only where it clearly helps — input that has lost its line
+     * structure, which is the case this visual exists to fix. SQL that already
+     * reads well is left exactly as the author wrote it.
+     */
+    private static needsBeautifying(sql: string): boolean {
+
+        const lines =
+            sql.split("\n")
+                .filter(line => line.trim().length > 0);
+
+        if (lines.length <= 2) {
+            return true;
+        }
+
+        const averageLength =
+            lines.reduce((total, line) => total + line.length, 0) /
+            lines.length;
+
+        return averageLength > MAX_COMFORTABLE_LINE_LENGTH;
+    }
+
+    /**
+     * Re-indents the SQL when it needs it. Anything sql-formatter cannot parse
+     * is passed through untouched rather than failing the render.
      */
     private static beautify(sql: string): string {
 
-        if (!sql.trim()) {
+        if (!sql.trim() || !Visual.needsBeautifying(sql)) {
             return sql;
         }
 

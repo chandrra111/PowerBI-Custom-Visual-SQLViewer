@@ -18,7 +18,8 @@ tokens, numbers the lines, and adds a one-click copy button.
 ## Features
 
 - **Automatic re-indentation** via [sql-formatter](https://github.com/sql-formatter-org/sql-formatter)
-  — a definition stored as one long line comes back readable
+  — a definition stored as one long line comes back readable. SQL that already
+  has sensible line structure is left exactly as written
 - SQL syntax highlighting (keywords, strings, comments, numbers, functions)
 - Line numbers in a fixed monospace gutter
 - One-click **Copy SQL** — copies the formatted text, ready to paste into SSMS
@@ -88,10 +89,15 @@ npm run package          # produces dist/*.pbiviz
 - Renders only the **first row** of the bound column; filter to one object.
 - Power BI truncates very long string values in the data view, so extremely
   large procedure bodies may be cut off.
-- No formatting-pane options yet (font size, theme, word wrap are hard-coded,
-  and re-indentation is always on).
-- Re-indentation targets T-SQL. Other dialects still render, but unparseable
-  input is passed through with its original spacing rather than reformatted.
+- No formatting-pane options yet (font size, theme and word wrap are
+  hard-coded, and re-indentation cannot be forced on or off).
+- Re-indentation only triggers when the input has lost its line structure
+  (two lines or fewer, or an average line longer than 120 characters).
+  `sql-formatter` is a query formatter, so it lays out a `SELECT` well but
+  breaks a `CREATE PROCEDURE` header across awkward lines — hence the
+  restraint. Well-formatted procedures are passed through untouched.
+- Re-indentation targets T-SQL. Other dialects still render, but input the
+  formatter cannot parse keeps its original spacing.
 
 ## Roadmap
 
