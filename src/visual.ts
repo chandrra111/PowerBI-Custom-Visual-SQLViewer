@@ -164,7 +164,7 @@ export class Visual implements IVisual {
 
         const sql = Visual.beautify(sourceSql);
 
-        // innerHTML resets scrollTop, so carry it across the re-render.
+        // Replacing the children resets scrollTop, so carry it across.
         const scrollTop = this.container.scrollTop;
         const scrollLeft = this.container.scrollLeft;
 
@@ -224,35 +224,7 @@ export class Visual implements IVisual {
         }
     }
 
-    /**
-     * Prism escapes its own output, but the fallback path does not — an
-     * unescaped value here would execute any markup present in the source.
-     */
-    private static escapeHtml(value: string): string {
-
-        return value
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-    }
-
-    private render(sql: string): void {
-
-        let highlighted: string;
-
-        try {
-
-            highlighted =
-                Prism.highlight(
-                    sql,
-                    Prism.languages.sql,
-                    "sql"
-                );
-
-        } catch {
-
-            highlighted = Visual.escapeHtml(sql);
-        }
+    private static gutterFor(sql: string): string {
 
         const lineCount = sql.split("\n").length;
 
@@ -262,35 +234,49 @@ export class Visual implements IVisual {
             lineNumbers += i + "\n";
         }
 
-        this.container.innerHTML = `
-<div class="sql-toolbar">
+        return lineNumbers;
+    }
 
-    <button
-        id="copySqlBtn"
-        class="sql-copy-btn">
+    /**
+     * Built node by node rather than from an HTML string: the SQL only ever
+     * reaches the DOM through textContent, so markup inside a definition can
+     * never execute, and Prism rewrites the node in place afterwards.
+     */
+    private render(sql: string): void {
 
-        ${COPY_LABEL}
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "sql-copy-btn";
+        button.textContent = COPY_LABEL;
+        button.onclick = () => this.copyToClipboard(button);
 
-    </button>
+        const toolbar = document.createElement("div");
+        toolbar.className = "sql-toolbar";
+        toolbar.appendChild(button);
 
-</div>
+        const gutter = document.createElement("pre");
+        gutter.className = "line-numbers";
+        gutter.textContent = Visual.gutterFor(sql);
 
-<div class="sql-wrapper">
+        const code = document.createElement("pre");
+        code.className = "sql-code language-sql";
+        code.textContent = sql;
 
-    <pre class="line-numbers">${lineNumbers}</pre>
+        const wrapper = document.createElement("div");
+        wrapper.className = "sql-wrapper";
+        wrapper.appendChild(gutter);
+        wrapper.appendChild(code);
 
-    <pre class="sql-code">${highlighted}</pre>
+        this.container.textContent = "";
+        this.container.appendChild(toolbar);
+        this.container.appendChild(wrapper);
 
-</div>
-`;
+        try {
 
-        const button =
-            this.container.querySelector(
-                "#copySqlBtn"
-            ) as HTMLButtonElement;
+            Prism.highlightElement(code);
 
-        if (button) {
-            button.onclick = () => this.copyToClipboard(button);
+        } catch {
+            // Leave the plain text in place; it is already readable.
         }
     }
 

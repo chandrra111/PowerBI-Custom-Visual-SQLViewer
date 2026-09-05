@@ -32,7 +32,7 @@ tokens, numbers the lines, and adds a one-click copy button.
 ## Install
 
 1. Download the latest package from the [Releases](../../releases) page, or
-   take **[`release/sqlViewerVisual.1.0.0.0.pbiviz`](release/sqlViewerVisual.1.0.0.0.pbiviz)**
+   take **[`release/sqlViewerVisual.1.1.0.0.pbiviz`](release/sqlViewerVisual.1.1.0.0.pbiviz)**
    from this repo with the *Download raw file* button.
 2. In Power BI Desktop: **Insert → More visuals → Import a visual from a file**.
 3. Select the downloaded `.pbiviz` and accept the import warning that Power BI
@@ -63,16 +63,18 @@ JOIN sys.objects     AS o ON o.object_id = m.object_id;
 Requires Node.js 18+ and the Power BI Visuals Tools.
 
 ```bash
-npm install
-npm install -g powerbi-visuals-tools
-pbiviz --create-cert     # first time only
-npm start                # dev server for Power BI Service developer visual
+npm install              # powerbi-visuals-tools is a devDependency, no global install
+npm run lint
 npm run package          # produces dist/*.pbiviz
 ```
 
-> The checked-in `release/*.pbiviz` is still the **1.0.0.0** build. Source is at
-> 1.1.0.0; run `npm install && npm run package` and copy the result into
-> `release/` to refresh it.
+`npm start` runs the dev server for the Power BI Service developer visual. It
+needs a certificate first (`npx pbiviz --create-cert`), which on Windows
+requires PowerShell 7 (`pwsh`) on PATH — Windows PowerShell 5.1 is not enough.
+Packaging does not need the certificate.
+
+After a version bump, copy the new `dist/*.pbiviz` into `release/` and update
+the download link above.
 
 ## Project structure
 
