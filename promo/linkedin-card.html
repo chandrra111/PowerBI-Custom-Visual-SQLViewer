@@ -1,0 +1,115 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SQL Viewer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1200px;height:1200px;background:#fff}
+  body{font-family:Inter,'Segoe UI',system-ui,sans-serif;color:#101828;
+       display:flex;flex-direction:column;padding:56px 60px 44px}
+
+  .eyebrow{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600;
+           letter-spacing:.14em;text-transform:uppercase;color:#667085}
+  .eyebrow b{color:#F2C811;font-size:26px;line-height:1}
+  h1{font-size:62px;line-height:1.06;font-weight:800;letter-spacing:-.026em;margin:20px 0 14px}
+  h1 .hl{color:#B42318}
+  .sub{font-size:23px;line-height:1.45;color:#475467;max-width:1000px;font-weight:400}
+
+  .panel{border:1px solid #E4E7EC;border-radius:14px;overflow:hidden;background:#fff}
+  .bar{display:flex;align-items:center;gap:10px;padding:11px 18px;font-size:15px;
+       font-weight:700;letter-spacing:.10em;text-transform:uppercase}
+  .bar .dot{width:9px;height:9px;border-radius:50%}
+  .bad .bar{background:#FEF3F2;color:#B42318;border-bottom:1px solid #FDA29B}
+  .bad .dot{background:#F04438}
+  .good .bar{background:#ECFDF3;color:#027A48;border-bottom:1px solid #A6F4C5}
+  .good .dot{background:#12B76A}
+  .bar .tag{margin-left:auto;font-weight:500;letter-spacing:.02em;text-transform:none;
+            font-size:14px;color:#667085}
+
+  .blob{padding:20px 22px;font-family:'JetBrains Mono',Consolas,monospace;font-size:15px;
+        line-height:1.62;color:#98A2B3;word-break:break-all;height:150px;overflow:hidden;
+        position:relative}
+  .blob::after{content:'';position:absolute;left:0;right:0;bottom:0;height:52px;
+               background:linear-gradient(transparent,#fff)}
+
+  .code{display:flex;font-family:'JetBrains Mono',Consolas,monospace;font-size:16.5px;line-height:26px}
+  .ln{padding:16px 14px 16px 18px;text-align:right;color:#98A2B3;background:#FCFCFD;
+      border-right:1px solid #E4E7EC;white-space:pre;user-select:none}
+  .src{padding:16px 20px;white-space:pre;overflow:hidden;flex:1}
+  .k{color:#0000FF;font-weight:700}
+  .s{color:#A31515}
+  .c{color:#008000;font-style:italic}
+  .n{color:#098658}
+  .f{color:#795E26;font-weight:700}
+  .o{color:#AF00DB}
+
+  .feats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:auto}
+  .feat{border:1px solid #E4E7EC;border-radius:12px;padding:16px 16px 17px;background:#FCFCFD}
+  .feat .ic{font-size:24px;line-height:1;margin-bottom:9px}
+  .feat .t{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .feat .d{font-size:14.5px;color:#667085;margin-top:3px;line-height:1.35}
+
+  footer{display:flex;align-items:center;gap:14px;margin-top:22px;padding-top:20px;
+         border-top:1px solid #E4E7EC;font-size:17px}
+  .repo{font-family:'JetBrains Mono',Consolas,monospace;font-weight:700;color:#101828}
+  .pill{margin-left:auto;display:flex;gap:8px}
+  .pill span{border:1px solid #E4E7EC;border-radius:999px;padding:6px 14px;font-size:14px;
+             color:#475467;font-weight:500}
+</style>
+
+<div class="eyebrow"><b>◆</b> Power BI Custom Visual</div>
+
+<h1>Power BI is great at charts.<br>It is <span class="hl">terrible</span> at showing SQL.</h1>
+<p class="sub">Drop a stored-procedure definition into a Card visual and 200 lines collapse into
+one grey wall of text. So I built a visual that renders it properly.</p>
+
+<div style="height:30px"></div>
+
+<div class="panel bad">
+  <div class="bar"><span class="dot"></span>Before — native Card visual<span class="tag">unreadable</span></div>
+  <div class="blob">CREATE PROCEDURE dbo.usp_GetCustomerRevenue @StartDate DATE, @EndDate DATE AS BEGIN SET NOCOUNT ON; SELECT c.CustomerID, c.CustomerName, SUM(o.TotalAmount) AS Revenue, COUNT(*) AS OrderCount FROM dbo.Orders AS o INNER JOIN dbo.Customers AS c ON c.CustomerID = o.CustomerID WHERE o.OrderDate BETWEEN @StartDate AND @EndDate AND o.Status = 'Completed' GROUP BY c.CustomerID, c.CustomerName HAVING SUM(o.TotalAmount) > 1000 ORDER BY Revenue DESC; END</div>
+</div>
+
+<div style="height:22px"></div>
+
+<div class="panel good">
+  <div class="bar"><span class="dot"></span>After — SQL Viewer<span class="tag">syntax highlighted · line numbered · copyable</span></div>
+  <div class="code">
+<div class="ln"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11</div><div class="src"><span class="c">-- Revenue by customer for a date window</span>
+<span class="k">CREATE PROCEDURE</span> dbo.usp_GetCustomerRevenue
+    <span class="o">@</span>StartDate <span class="k">DATE</span>,
+    <span class="o">@</span>EndDate   <span class="k">DATE</span>
+<span class="k">AS</span>
+<span class="k">BEGIN</span>
+    <span class="k">SELECT</span>  c.CustomerName,
+            <span class="f">SUM</span>(o.TotalAmount) <span class="k">AS</span> Revenue
+    <span class="k">FROM</span>    dbo.Orders <span class="k">AS</span> o
+    <span class="k">WHERE</span>   o.Status <span class="o">=</span> <span class="s">'Completed'</span>
+    <span class="k">GROUP BY</span> c.CustomerName;</div>
+  </div>
+</div>
+
+<div style="height:26px"></div>
+
+<div class="feats">
+  <div class="feat"><div class="ic">🎨</div><div class="t">Highlighted</div><div class="d">Keywords, strings, comments</div></div>
+  <div class="feat"><div class="ic">#️⃣</div><div class="t">Line numbers</div><div class="d">Fixed gutter, real indentation</div></div>
+  <div class="feat"><div class="ic">📋</div><div class="t">One-click copy</div><div class="d">Straight into SSMS</div></div>
+  <div class="feat"><div class="ic">🔒</div><div class="t">No calls out</div><div class="d">Runs in the visual sandbox</div></div>
+</div>
+
+<footer>
+  <span style="font-size:22px">⭐</span>
+  <span class="repo">github.com/chandrra111/PowerBI-Custom-Visual-SQLViewer</span>
+  <span class="pill"><span>MIT</span><span>TypeScript</span><span>API 5.3</span></span>
+</footer>

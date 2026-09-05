@@ -25,7 +25,7 @@ tokens, numbers the lines, and adds a one-click copy button.
 
 ## Screenshot
 
-<!-- TODO: add assets/screenshot.png -->
+![SQL Viewer — before and after](promo/linkedin-card.png)
 
 ## Install
 
