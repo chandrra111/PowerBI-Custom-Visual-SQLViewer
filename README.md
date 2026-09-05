@@ -29,9 +29,15 @@ tokens, numbers the lines, and adds a one-click copy button.
 
 ## Install
 
-1. Download the latest `.pbiviz` from the [Releases](../../releases) page.
+1. Download **[`release/sqlViewerVisual.1.0.0.0.pbiviz`](release/sqlViewerVisual.1.0.0.0.pbiviz)**
+   (use the *Download raw file* button), or grab it from the
+   [Releases](../../releases) page.
 2. In Power BI Desktop: **Insert → More visuals → Import a visual from a file**.
-3. Select the downloaded `.pbiviz`.
+3. Select the downloaded `.pbiviz` and accept the import warning that Power BI
+   shows for any uncertified custom visual.
+
+> Not on AppSource yet, so Power BI will flag it as an uncertified visual. It
+> makes no external service calls — see [`src/visual.ts`](src/visual.ts).
 
 ## Usage
 

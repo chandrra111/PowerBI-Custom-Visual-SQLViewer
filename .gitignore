@@ -6,6 +6,9 @@ node_modules/
 dist/
 *.pbiviz
 
+# ...but the published package is kept in version control
+!release/*.pbiviz
+
 # Webpack analyzer output
 webpack.statistics.*.html
 
