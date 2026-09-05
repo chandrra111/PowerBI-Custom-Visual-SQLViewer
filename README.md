@@ -1,7 +1,7 @@
 # SQL Viewer — Power BI Custom Visual
 
 A Power BI custom visual that renders SQL text (stored procedure bodies, view
-definitions, ad-hoc queries) as **syntax-highlighted, line-numbered code**
+definitions, ad-hoc queries) as **re-indented, syntax-highlighted, line-numbered code**
 directly inside a report page — instead of the unreadable single-line blob you
 get from a Card or Table visual.
 
@@ -17,10 +17,11 @@ tokens, numbers the lines, and adds a one-click copy button.
 
 ## Features
 
+- **Automatic re-indentation** via [sql-formatter](https://github.com/sql-formatter-org/sql-formatter)
+  — a definition stored as one long line comes back readable
 - SQL syntax highlighting (keywords, strings, comments, numbers, functions)
-- Line numbers in a fixed gutter
-- Preserved indentation and line breaks
-- One-click **Copy SQL** to clipboard
+- Line numbers in a fixed monospace gutter
+- One-click **Copy SQL** — copies the formatted text, ready to paste into SSMS
 - No external service calls — everything runs client-side in the visual sandbox
 
 ## Screenshot
@@ -29,9 +30,9 @@ tokens, numbers the lines, and adds a one-click copy button.
 
 ## Install
 
-1. Download **[`release/sqlViewerVisual.1.0.0.0.pbiviz`](release/sqlViewerVisual.1.0.0.0.pbiviz)**
-   (use the *Download raw file* button), or grab it from the
-   [Releases](../../releases) page.
+1. Download the latest package from the [Releases](../../releases) page, or
+   take **[`release/sqlViewerVisual.1.0.0.0.pbiviz`](release/sqlViewerVisual.1.0.0.0.pbiviz)**
+   from this repo with the *Download raw file* button.
 2. In Power BI Desktop: **Insert → More visuals → Import a visual from a file**.
 3. Select the downloaded `.pbiviz` and accept the import warning that Power BI
    shows for any uncertified custom visual.
@@ -68,6 +69,10 @@ npm start                # dev server for Power BI Service developer visual
 npm run package          # produces dist/*.pbiviz
 ```
 
+> The checked-in `release/*.pbiviz` is still the **1.0.0.0** build. Source is at
+> 1.1.0.0; run `npm install && npm run package` and copy the result into
+> `release/` to refresh it.
+
 ## Project structure
 
 | Path                 | Purpose                                          |
@@ -83,14 +88,15 @@ npm run package          # produces dist/*.pbiviz
 - Renders only the **first row** of the bound column; filter to one object.
 - Power BI truncates very long string values in the data view, so extremely
   large procedure bodies may be cut off.
-- No formatting-pane options yet (font size, theme, word wrap are hard-coded).
-- Syntax highlighting only — the visual does **not** re-indent or beautify the
-  SQL it receives.
+- No formatting-pane options yet (font size, theme, word wrap are hard-coded,
+  and re-indentation is always on).
+- Re-indentation targets T-SQL. Other dialects still render, but unparseable
+  input is passed through with its original spacing rather than reformatted.
 
 ## Roadmap
 
-- [ ] Formatting pane: font size, font family, light/dark theme, word wrap
-- [ ] Optional SQL beautifier (re-indent / keyword casing)
+- [ ] Formatting pane: font size, theme, word wrap, and a re-indent toggle
+- [ ] Dialect picker (T-SQL / PostgreSQL / MySQL / Snowflake)
 - [ ] Search-within-code box
 - [ ] Power BI theme + high-contrast mode support
 - [ ] Render all bound rows with an object selector

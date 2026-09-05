@@ -2,6 +2,7 @@
 
 import powerbi from "powerbi-visuals-api";
 import Prism from "prismjs";
+import { format as formatSql } from "sql-formatter";
 
 import "prismjs/components/prism-sql";
 
@@ -16,72 +17,14 @@ import VisualUpdateOptions =
 import IVisual =
     powerbi.extensibility.visual.IVisual;
 
-export class Visual implements IVisual {
+const COPY_LABEL = "📋 Copy SQL";
+const COPY_RESET_MS = 2000;
 
-    private container: HTMLDivElement;
-
-    constructor(options: VisualConstructorOptions) {
-
-        this.container = document.createElement("div");
-
-        this.container.style.width = "100%";
-        this.container.style.height = "100%";
-        this.container.style.overflow = "auto";
-        this.container.style.padding = "8px";
-        this.container.style.backgroundColor = "#ffffff";
-
-        options.element.appendChild(this.container);
-    }
-
-    public update(options: VisualUpdateOptions): void {
-
-        const category =
-            options.dataViews?.[0]
-                ?.categorical
-                ?.categories?.[0];
-
-        if (
-            !category ||
-            !category.values ||
-            category.values.length === 0
-        ) {
-            this.container.innerHTML = "No SQL Found";
-            return;
-        }
-
-        const sqlText =
-            String(category.values[0] ?? "");
-
-        let highlighted: string;
-
-        try {
-
-            highlighted =
-                Prism.highlight(
-                    sqlText,
-                    Prism.languages.sql,
-                    "sql"
-                );
-
-        } catch {
-
-            highlighted = sqlText;
-        }
-
-        const lineCount =
-            sqlText.split("\n").length;
-
-       
-let lineNumbers = "";
-
-for (let i = 1; i <= lineCount; i++) {
-    lineNumbers += i + "\n";
-}
-
-
-        const html = `
-<style>
-
+/**
+ * Injected once in the constructor rather than on every update(), which fires
+ * on each resize as well as on each data change.
+ */
+const STYLES = `
 .sql-toolbar{
     margin-bottom:8px;
 }
@@ -92,6 +35,7 @@ for (let i = 1; i <= lineCount; i++) {
     border:1px solid #cccccc;
     border-radius:4px;
     background:#f5f5f5;
+    font-family:Segoe UI, sans-serif;
     font-size:12px;
 }
 
@@ -99,57 +43,38 @@ for (let i = 1; i <= lineCount; i++) {
     background:#e8e8e8;
 }
 
-
-
-
-
-.code-area{
-    flex:1;
-    overflow:auto;
-    user-select:text;
-}
-
 .sql-wrapper{
     display:flex;
     align-items:flex-start;
-    font-family:Arial, sans-serif;
-    font-size:14px;
+    white-space:pre;
+}
+
+/* Code must be monospace or the gutter drifts out of line with the source. */
+.line-numbers,
+.sql-code{
+    margin:0;
+    font-family:Consolas, "Cascadia Mono", "Courier New", monospace;
+    font-size:13px;
     line-height:20px;
-     white-space:pre;
+    white-space:pre;
 }
 
 .line-numbers{
-    margin:0;
-    width:60px;
+    width:48px;
     text-align:right;
     padding-right:10px;
-    border-right:1px solid #ddd;
     margin-right:10px;
+    border-right:1px solid #ddd;
     color:#888;
-    user-select:none;
     background:#fafafa;
-    white-space:pre;
- font-family:Arial, sans-serif;
-    font-size:14px;
-    line-height:20px;
-
+    user-select:none;
 }
 
 .sql-code{
-    margin:0;
     flex:1;
     overflow:auto;
-    white-space:pre;
-   
-line-height:20px;
-
-    font-family:Arial, sans-serif;
-    font-size:14px;
-
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
-    text-rendering:optimizeLegibility;
-
 }
 
 /* Prism colors */
@@ -188,16 +113,137 @@ line-height:20px;
 .token.punctuation{
     color:#333333;
 }
+`;
 
-</style>
+export class Visual implements IVisual {
 
+    private container: HTMLDivElement;
+
+    /** The text currently on screen — this is what the copy button yields. */
+    private renderedSql = "";
+
+    constructor(options: VisualConstructorOptions) {
+
+        const style = document.createElement("style");
+        style.textContent = STYLES;
+        options.element.appendChild(style);
+
+        this.container = document.createElement("div");
+
+        this.container.style.width = "100%";
+        this.container.style.height = "100%";
+        this.container.style.overflow = "auto";
+        this.container.style.padding = "8px";
+        this.container.style.backgroundColor = "#ffffff";
+
+        options.element.appendChild(this.container);
+    }
+
+    public update(options: VisualUpdateOptions): void {
+
+        const category =
+            options.dataViews?.[0]
+                ?.categorical
+                ?.categories?.[0];
+
+        if (
+            !category ||
+            !category.values ||
+            category.values.length === 0
+        ) {
+            this.renderedSql = "";
+            this.container.textContent = "No SQL Found";
+            return;
+        }
+
+        const sourceSql =
+            String(category.values[0] ?? "");
+
+        const sql = Visual.beautify(sourceSql);
+
+        // innerHTML resets scrollTop, so carry it across the re-render.
+        const scrollTop = this.container.scrollTop;
+        const scrollLeft = this.container.scrollLeft;
+
+        this.renderedSql = sql;
+        this.render(sql);
+
+        this.container.scrollTop = scrollTop;
+        this.container.scrollLeft = scrollLeft;
+    }
+
+    /**
+     * Re-indents the SQL. Definitions pulled from sys.sql_modules are often a
+     * single line, or indented for a console rather than a report. Anything
+     * sql-formatter cannot parse is passed through untouched.
+     */
+    private static beautify(sql: string): string {
+
+        if (!sql.trim()) {
+            return sql;
+        }
+
+        try {
+
+            return formatSql(sql, {
+                language: "tsql",
+                tabWidth: 4,
+                keywordCase: "upper",
+                linesBetweenQueries: 2
+            });
+
+        } catch {
+
+            return sql;
+        }
+    }
+
+    /**
+     * Prism escapes its own output, but the fallback path does not — an
+     * unescaped value here would execute any markup present in the source.
+     */
+    private static escapeHtml(value: string): string {
+
+        return value
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+    }
+
+    private render(sql: string): void {
+
+        let highlighted: string;
+
+        try {
+
+            highlighted =
+                Prism.highlight(
+                    sql,
+                    Prism.languages.sql,
+                    "sql"
+                );
+
+        } catch {
+
+            highlighted = Visual.escapeHtml(sql);
+        }
+
+        const lineCount = sql.split("\n").length;
+
+        let lineNumbers = "";
+
+        for (let i = 1; i <= lineCount; i++) {
+            lineNumbers += i + "\n";
+        }
+
+        this.container.innerHTML = `
 <div class="sql-toolbar">
 
     <button
         id="copySqlBtn"
         class="sql-copy-btn">
 
-        📋 Copy SQL
+        ${COPY_LABEL}
 
     </button>
 
@@ -212,67 +258,76 @@ line-height:20px;
 </div>
 `;
 
-        this.container.innerHTML = html;
-
         const button =
             this.container.querySelector(
                 "#copySqlBtn"
             ) as HTMLButtonElement;
 
         if (button) {
+            button.onclick = () => this.copyToClipboard(button);
+        }
+    }
 
-            button.onclick = () => {
+    private copyToClipboard(button: HTMLButtonElement): void {
 
-                try {
+        const done = (label: string) => {
 
-                    const textarea =
-                        document.createElement(
-                            "textarea"
-                        );
+            button.innerText = label;
 
-                    textarea.value =
-                        sqlText;
+            setTimeout(() => {
+                button.innerText = COPY_LABEL;
+            }, COPY_RESET_MS);
+        };
 
-                    textarea.style.position =
-                        "fixed";
+        // The async clipboard API is usually blocked inside the visual
+        // sandbox, and can throw rather than reject when it is, so fall back
+        // to the deprecated command in both cases.
+        try {
 
-                    textarea.style.left =
-                        "-99999px";
+            const write = navigator.clipboard?.writeText(this.renderedSql);
 
-                    document.body.appendChild(
-                        textarea
-                    );
+            if (write) {
 
-                    textarea.focus();
-                    textarea.select();
+                write.then(
+                    () => done("✅ Copied"),
+                    () => done(this.copyWithExecCommand())
+                );
 
-                    document.execCommand(
-                        "copy"
-                    );
+                return;
+            }
 
-                    document.body.removeChild(
-                        textarea
-                    );
+        } catch {
+            // fall through
+        }
 
-                    button.innerText =
-                        "✅ Copied";
+        done(this.copyWithExecCommand());
+    }
 
-                }
-                catch {
+    private copyWithExecCommand(): string {
 
-                    button.innerText =
-                        "❌ Failed";
+        try {
 
-                }
+            const textarea =
+                document.createElement("textarea");
 
-                setTimeout(() => {
+            textarea.value = this.renderedSql;
+            textarea.style.position = "fixed";
+            textarea.style.left = "-99999px";
 
-                    button.innerText =
-                        "📋 Copy SQL";
+            document.body.appendChild(textarea);
 
-                }, 2000);
+            textarea.focus();
+            textarea.select();
 
-            };
+            const ok = document.execCommand("copy");
+
+            document.body.removeChild(textarea);
+
+            return ok ? "✅ Copied" : "❌ Failed";
+
+        } catch {
+
+            return "❌ Failed";
         }
     }
 
